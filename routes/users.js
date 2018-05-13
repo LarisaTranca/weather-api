@@ -1,6 +1,17 @@
 var express = require('express');
 var router = express.Router();
 var connection = require('../library/connection');
+var md5 = require('md5');
+var nodemailer = require("nodemailer");
+
+var smtpTransport = nodemailer.createTransport({
+  service: "Gmail",
+      auth: {
+          user: "weather.predict1",
+          pass: "secret10!"
+      }
+});
+var rand,mailOptions,host,link;
 /* GET users listing. */
 router.get('/', function(req, res, next) {
   connection.select('*')
@@ -12,6 +23,102 @@ router.get('/', function(req, res, next) {
   }).
   catch(function(err){
     if (err) return console.error("Uh oh! Couldn't get results: " + err.msg);
+  });
+});
+router.get('/send',function(req,res){
+        rand=Math.floor((Math.random() * 100) + 54);
+    host=req.get('host');
+    link="http://"+req.get('host')+"/users/verify?id="+rand;
+    mailOptions={
+        to : req.query.to,
+        subject : "Please confirm your Email account",
+        html : "Hello,<br> Please Click on the link to verify your email.<br><a href="+link+">Click here to verify</a>"
+    }
+    console.log(mailOptions);
+    smtpTransport.sendMail(mailOptions, function(error, response){
+     if(error){
+            console.log(error);
+        res.end("error");
+     }else{
+            console.log("Message sent: " + response.message);
+        res.end("sent");
+         }
+});
+});
+router.get('/verify',function(req,res){
+  console.log(req.protocol+":/"+req.get('host'));
+  if((req.protocol+"://"+req.get('host'))==("http://"+host))
+  {
+      console.log("Domain is matched. Information is from Authentic email");
+      if(req.query.id==rand)
+      {
+          console.log("email is verified");
+          res.end("<h1>Email "+mailOptions.to+" is been Successfully verified");
+      }
+      else
+      {
+          console.log("email is not verified");
+          res.end("<h1>Bad Request</h1>");
+      }
+  }
+  else
+  {
+      res.end("<h1>Request is from unknown source");
+  }
+})
+router.get('/user', function(req, res, next) {
+  connection.select('*')
+  .where({id: req.query.id})
+  .from('users')
+  .then(function(response){
+    // if (err) return console.error("Uh oh! Couldn't get results: " + err.msg);
+    console.log(response);
+    res.send({user:response});
+  }).
+  catch(function(err){
+    if (err) return console.error("Uh oh! Couldn't get results: " + err.msg);
+  });
+});
+router.post('/', function(req, res, next) {
+  connection
+  .insert({email: req.body.email, password: md5(req.body.password),
+     location: req.body.location, first_name: req.body.first_name, last_name: req.body.last_name}, 'id')
+     .into('users')
+  .then(function(response){
+    // if (err) return console.error("Uh oh! Couldn't get results: " + err.msg);
+    console.log(response);
+    res.send({id:response});
+  }).
+  catch(function(err){
+    if (err) return console.error("Uh oh! Couldn't get results: " + err);
+  });
+});
+
+router.put('/', function(req, res, next) {
+  connection('users')
+  .where('id', req.body.id)
+  .update({first_name: req.body.first_name, last_name: req.body.last_name})
+  .then(function(response){
+    // if (err) return console.error("Uh oh! Couldn't get results: " + err.msg);
+    console.log(response);
+    res.send({message:"Successfully updated!"});
+  }).
+  catch(function(err){
+    if (err) return console.error("Uh oh! Couldn't get results: " + err);
+  });
+});
+
+router.delete('/', function(req, res, next) {
+  connection('users')
+  .where('id', req.body.id)
+  .del()
+  .then(function(response){
+    // if (err) return console.error("Uh oh! Couldn't get results: " + err.msg);
+    console.log(response);
+    res.send({message:"Successfully deleted!"});
+  }).
+  catch(function(err){
+    if (err) return console.error("Uh oh! Couldn't get results: " + err);
   });
 });
 
