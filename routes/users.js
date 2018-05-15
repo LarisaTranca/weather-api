@@ -1,7 +1,7 @@
 var express = require('express');
 var router = express.Router();
 var connection = require('../library/connection');
-var bcrypt = require('bcrypt');
+var bcrypt = require('bcrypt-nodejs');
 var nodemailer = require("nodemailer");
 
 var smtpTransport = nodemailer.createTransport({
@@ -135,7 +135,7 @@ router.get('/auth', function(req,res,next){
     }else{
       res.send({"found":0});
     }
-      
+
   });
 });
 
@@ -147,8 +147,8 @@ router.get('/forgot-password', function(req, res, next) {
       if(req.query.id==rand)
       {
           console.log("email is verified");
-          res.writeHeader(200, {"Content-Type": "text/html"}); 
-          res.write("<form action='http://"+req.get('host')+"/users/update-password' method='post'>" + 
+          res.writeHeader(200, {"Content-Type": "text/html"});
+          res.write("<form action='http://"+req.get('host')+"/users/update-password' method='post'>" +
             "<p> New password: </p> <input type='hidden' name='email' value='"+req.query.email+"'/><input type='password' name='password' placeholder='New Password'/>"+
             "<input type='submit' value='Change Password'/></form>");
           res.end();
