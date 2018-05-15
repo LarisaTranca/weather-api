@@ -1,7 +1,7 @@
 var express = require('express');
 var router = express.Router();
 var connection = require('../library/connection');
-var bcrypt = require('bcrypt-nodejs');
+var bcrypt = require('bcryptjs');
 var nodemailer = require("nodemailer");
 
 var smtpTransport = nodemailer.createTransport({
@@ -130,6 +130,7 @@ router.get('/auth', function(req,res,next){
   .where({email: req.query.email})
   .from('users')
   .then(function(response){
+    console.log(response[0].password);
     if(bcrypt.compareSync(req.query.password, response[0].password)){
       res.send({"data": response, "found":1});
     }else{
