@@ -85,7 +85,7 @@ router.post('/', function(req, res, next) {
   var hash = bcrypt.hashSync(req.body.password, salt);
   connection
   .insert({email: req.body.email, password: hash,
-     location: req.body.location, first_name: req.body.first_name, last_name: req.body.last_name}, 'id')
+     location: req.body.location, first_name: req.body.first_name, last_name: req.body.last_name, timestamp: Math.floor(Date.now() / 1000)}, 'id')
      .into('users')
   .then(function(response){
     // if (err) return console.error("Uh oh! Couldn't get results: " + err.msg);
@@ -100,7 +100,7 @@ router.post('/', function(req, res, next) {
 router.put('/', function(req, res, next) {
   connection('users')
   .where('id', req.body.id)
-  .update({first_name: req.body.first_name, last_name: req.body.last_name})
+  .update({first_name: req.body.first_name, last_name: req.body.last_name, image: req.body.image, tel:req.body.tel})
   .then(function(response){
     // if (err) return console.error("Uh oh! Couldn't get results: " + err.msg);
     console.log(response);
@@ -132,7 +132,7 @@ router.get('/auth', function(req,res,next){
   .then(function(response){
     console.log(response[0].password);
     if(bcrypt.compareSync(req.query.password, response[0].password)){
-      res.send({"data": response, "found":1});
+      res.send({"data": response[0], "found":1});
     }else{
       res.send({"found":0});
     }
@@ -183,4 +183,25 @@ router.post('/update-password', function(req,res,next){
   });
 });
 
+
+router.post('/fake-user', function(req,res,next){
+  connection
+  .insert({email: '', password: '',
+     location: req.body.location, first_name: 'No', last_name: 'User', timestamp: Math.floor(Date.now() / 1000)}, 'id')
+     .into('users')
+  .then(function(response){
+    connection.select('*')
+    .where({id: response})
+    .from('users')
+    .then(function(response){
+      res.send({user:response});
+    }).
+    catch(function(err){
+      if (err) return console.error("Uh oh! Couldn't get results: " + err.msg);
+    });
+  }).
+  catch(function(err){
+    if (err) return console.error("Uh oh! Couldn't get results: " + err);
+  });
+});
 module.exports = router;
